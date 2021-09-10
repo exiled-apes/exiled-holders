@@ -1,5 +1,5 @@
 {
-  "extends": "./node_modules/@tsconfig/node16/tsconfig.json",
+  "extends": "../node_modules/@tsconfig/node16/tsconfig.json",
   "ts-node": {
     "compilerOptions": {
       "module": "commonjs"
@@ -8,8 +8,8 @@
   "compilerOptions": {
     "declaration": true,
     "moduleResolution": "node",
-    "module": "es2015"
+    "module": "CommonJS",
+    "outDir": "../build"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["*.ts"]
 }
