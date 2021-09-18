@@ -20,7 +20,8 @@
   "homepage": "https://github.com/exiled-apes/exiled-holders#readme",
   "dependencies": {
     "@solana/web3.js": "^1.25.0",
-    "commander": "^8.1.0"
+    "commander": "^8.1.0",
+    "p-retry": "^4.6.1"
   },
   "devDependencies": {
     "@types/node": "^16.9.0",
