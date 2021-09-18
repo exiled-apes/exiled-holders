@@ -4,8 +4,6 @@ import { createReadStream } from 'fs';
 import { program } from 'commander'
 import pRetry from 'p-retry';
 
-const tokenProgramId = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-
 program
     .version('0.0.1')
     .option('-t, --token-address-log <string>', 'token accounts', 'exiled-token-addresses.log')
@@ -21,18 +19,13 @@ async function sleep(millis: number) {
 }
 
 async function mineCurrentHolder(tokenAccount: string): Promise<string | undefined> {
-    const programAccounts = await connection.getParsedProgramAccounts(
-        tokenProgramId, {
-        filters: [
-            { dataSize: 165 },
-            { memcmp: { offset: 0, bytes: tokenAccount } }
-        ]
-    })
+    const largestAccounts = await connection.getTokenLargestAccounts(new PublicKey(tokenAccount))
+    const largestPDA = largestAccounts.value.shift()
+    const largestWallet = await connection.getParsedAccountInfo(largestPDA?.address!);
+    const data = largestWallet.value?.data.valueOf();
 
-    const programAccount = programAccounts.pop()!
-    const holderAccount = await connection.getParsedAccountInfo(programAccount.pubkey)
-    const data: any = holderAccount.value?.data.valueOf();
-    return data?.parsed?.info?.owner
+    //@ts-ignore
+    return data?.parsed?.info?.owner;
 }
 
 async function main() {

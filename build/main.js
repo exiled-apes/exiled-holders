@@ -8,7 +8,6 @@ const readline_1 = require("readline");
 const fs_1 = require("fs");
 const commander_1 = require("commander");
 const p_retry_1 = __importDefault(require("p-retry"));
-const tokenProgramId = new web3_js_1.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 commander_1.program
     .version('0.0.1')
     .option('-t, --token-address-log <string>', 'token accounts', 'exiled-token-addresses.log')
@@ -21,15 +20,11 @@ async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
 }
 async function mineCurrentHolder(tokenAccount) {
-    const programAccounts = await connection.getParsedProgramAccounts(tokenProgramId, {
-        filters: [
-            { dataSize: 165 },
-            { memcmp: { offset: 0, bytes: tokenAccount } }
-        ]
-    });
-    const programAccount = programAccounts.pop();
-    const holderAccount = await connection.getParsedAccountInfo(programAccount.pubkey);
-    const data = holderAccount.value?.data.valueOf();
+    const largestAccounts = await connection.getTokenLargestAccounts(new web3_js_1.PublicKey(tokenAccount));
+    const largestPDA = largestAccounts.value.shift();
+    const largestWallet = await connection.getParsedAccountInfo(largestPDA?.address);
+    const data = largestWallet.value?.data.valueOf();
+    //@ts-ignore
     return data?.parsed?.info?.owner;
 }
 async function main() {
