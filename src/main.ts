@@ -20,21 +20,19 @@ async function sleep(millis: number) {
     return new Promise(resolve => setTimeout(resolve, millis));
 }
 
-async function mineOwner(tokenAddress: string): Promise<string | undefined> {
+async function mineCurrentHolder(tokenAccount: string): Promise<string | undefined> {
     const programAccounts = await connection.getParsedProgramAccounts(
         tokenProgramId, {
         filters: [
             { dataSize: 165 },
-            { memcmp: { offset: 0, bytes: tokenAddress } }
+            { memcmp: { offset: 0, bytes: tokenAccount } }
         ]
     })
 
-    for (const programAccount of programAccounts) {
-        const holderAccount = await connection.getParsedAccountInfo(programAccount.pubkey)
-        const data: any = holderAccount.value?.data.valueOf();
-        const owner = data?.parsed?.info?.owner
-        return owner
-    }
+    const programAccount = programAccounts.pop()!
+    const holderAccount = await connection.getParsedAccountInfo(programAccount.pubkey)
+    const data: any = holderAccount.value?.data.valueOf();
+    return data?.parsed?.info?.owner
 }
 
 async function main() {
@@ -44,14 +42,12 @@ async function main() {
     });
 
     for await (const line of lineReader) {
-        const tokenAddress = line.split(' ').pop()!
-        const holder = await pRetry(async () => await mineOwner(tokenAddress), {
+        const tokenAccount = line.split(' ').pop()!
+        const currentHolder = await pRetry(async () => await mineCurrentHolder(tokenAccount), {
+            onFailedAttempt: (err) => console.error(`mining ${tokenAccount} failed.`, err),
             retries: 4,
-            onFailedAttempt: (err) => {
-                console.error(`mining ${tokenAddress} failed.`, err);
-            },
         })
-        console.log(holder)
+        console.log(currentHolder)
         await sleep(parseInt(chill, 10))
     }
 }

@@ -13,26 +13,24 @@ commander_1.program
     .version('0.0.1')
     .option('-t, --token-address-log <string>', 'token accounts', 'exiled-token-addresses.log')
     .option('-e, --rpc-host <string>', 'rpc host', 'https://api.mainnet-beta.solana.com')
-    .option('-c, --chill <number>', 'sleep per token (be nice to free rpc servers) ', '50')
+    .option('-c, --chill <number>', 'sleep per token (please be nice to free rpc servers) ', '100')
     .parse();
 const { tokenAddressLog, rpcHost, chill } = commander_1.program.opts();
 const connection = new web3_js_1.Connection(rpcHost, 'singleGossip');
 async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
 }
-async function mineOwner(tokenAddress) {
+async function mineCurrentHolder(tokenAccount) {
     const programAccounts = await connection.getParsedProgramAccounts(tokenProgramId, {
         filters: [
             { dataSize: 165 },
-            { memcmp: { offset: 0, bytes: tokenAddress } }
+            { memcmp: { offset: 0, bytes: tokenAccount } }
         ]
     });
-    for (const programAccount of programAccounts) {
-        const holderAccount = await connection.getParsedAccountInfo(programAccount.pubkey);
-        const data = holderAccount.value?.data.valueOf();
-        const owner = data?.parsed?.info?.owner;
-        return owner;
-    }
+    const programAccount = programAccounts.pop();
+    const holderAccount = await connection.getParsedAccountInfo(programAccount.pubkey);
+    const data = holderAccount.value?.data.valueOf();
+    return data?.parsed?.info?.owner;
 }
 async function main() {
     const lineReader = (0, readline_1.createInterface)({
@@ -40,14 +38,12 @@ async function main() {
         crlfDelay: Infinity
     });
     for await (const line of lineReader) {
-        const tokenAddress = line.split(' ').pop();
-        const holder = await (0, p_retry_1.default)(async () => await mineOwner(tokenAddress), {
+        const tokenAccount = line.split(' ').pop();
+        const currentHolder = await (0, p_retry_1.default)(async () => await mineCurrentHolder(tokenAccount), {
+            onFailedAttempt: (err) => console.error(`mining ${tokenAccount} failed.`, err),
             retries: 4,
-            onFailedAttempt: (err) => {
-                console.error(`mining ${tokenAddress} failed.`, err);
-            },
         });
-        console.log(holder);
+        console.log(currentHolder);
         await sleep(parseInt(chill, 10));
     }
 }
