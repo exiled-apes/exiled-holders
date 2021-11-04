@@ -6,7 +6,7 @@ import pRetry from 'p-retry';
 
 program
     .version('0.0.1')
-    .option('-t, --token-address-log <string>', 'token accounts', 'exiled-token-addresses.log')
+    .option('-t, --token-address-log <string>', 'token accounts')
     .option('-e, --rpc-host <string>', 'rpc host', 'https://api.mainnet-beta.solana.com')
     .option('-c, --chill <number>', 'sleep per token (please be nice to free rpc servers) ', '100')
     .parse()
